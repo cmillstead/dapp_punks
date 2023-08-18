@@ -5,19 +5,17 @@ import "./ERC721Enumerable.sol";
 import "./Ownable.sol";
 
 contract NFT is ERC721Enumerable, Ownable {
+    using Strings for uint256;
+    string public baseURI;
+    string public baseExtension = ".json";    
     uint256 public cost;
     uint256 public maxSupply;
     uint256 public allowMintingOn;
-    string public baseURI;
 
-    // using Strings for uint256;
-
-    // uint256 public constant MAX_NFT_SUPPLY = 10000;
-    // uint256 public constant MAX_MINT_PER_TX = 20;
-    // uint256 public constant PRICE = 0.05 ether;
-
-    // string private _baseTokenURI;
-    // bool public _saleIsActive = false;
+    event Mint(
+        uint256 amount,
+        address minter
+    );
 
     constructor(
         string memory _name, 
@@ -26,7 +24,7 @@ contract NFT is ERC721Enumerable, Ownable {
         uint256 _maxSupply,
         uint256 _allowMintingOn,
         string memory _baseURI
-    ) ERC721 (  
+    ) ERC721(  
         _name, 
         _symbol
     ) {
@@ -34,39 +32,68 @@ contract NFT is ERC721Enumerable, Ownable {
         maxSupply = _maxSupply;
         allowMintingOn = _allowMintingOn;
         baseURI = _baseURI;
-        // setBaseURI(baseURI); 
     }
 
-    // function mint(uint256 numberOfTokens) public payable {
-    //     require(_saleIsActive, "Sale must be active to mint NFT");
-    //     require(
-    //         numberOfTokens <= MAX_MINT_PER_TX,
-    //         "Can only mint 20 tokens at a time"
-    //     );
-    //     require(
-    //         totalSupply() + numberOfTokens <= MAX_NFT_SUPPLY,
-    //         "Purchase would exceed max supply of NFT"
-    //     );
-    //     require(
-    //         PRICE * numberOfTokens <= msg.value,
-    //         "Ether value sent is not correct"
-    //     );
+    function mint(uint256 _mintAmount) public payable {
+        uint256 supply = totalSupply();
 
-    //     for (uint256 i = 0; i < numberOfTokens; i++) {
-    //         uint256 mintIndex = totalSupply();
-    //         _safeMint(msg.sender, mintIndex);
-    //     }
-    // }
+        require(
+            _mintAmount > 0,
+            "Must mint at least one NFT"
+        );
+        require(
+            block.timestamp >= allowMintingOn,
+            "Minting not allowed yet"
+        );
+        require(
+            msg.value >= cost * _mintAmount,
+            "Insufficient payment"
+        );
+        require(
+            supply + _mintAmount <= maxSupply,
+            "Exceeds maximum supply"
+        );
 
-    // function setBaseURI(string memory baseURI) public  {
-    //     _baseTokenURI = baseURI;
-    // }
+        for (uint256 i = 1; i <= _mintAmount; i++) {
+            _safeMint(msg.sender, supply + i);
+        }
 
-    // function setSaleIsActive(bool isActive) public  {
-    //     _saleIsActive = isActive;
-    // }
+        emit Mint(_mintAmount, msg.sender);
+    }
 
-    // function _baseURI() internal view virtual override returns (string memory) {
-    //     return _baseTokenURI;
-    // }
+    function tokenURI(uint256 _tokenId) 
+        public 
+        view 
+        virtual 
+        override 
+        returns (string memory) 
+    {
+        require(
+            _exists(_tokenId),
+            "Token does not exist"
+        );
+
+        return(
+            string(
+                abi.encodePacked(
+                    baseURI,
+                    _tokenId.toString(),
+                    baseExtension
+                )
+            )
+        );
+    }
+
+    function walletOfOwner(address _owner) 
+        public 
+        view 
+        returns(uint256[] memory) 
+    {
+        uint256 tokenCount = balanceOf(_owner);
+        uint256[] memory tokensId = new uint256[](tokenCount);
+        for(uint256 i = 0; i < tokenCount; i++){
+            tokensId[i] = tokenOfOwnerByIndex(_owner, i);
+        }
+        return tokensId;
+    }
 }
