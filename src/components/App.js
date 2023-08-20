@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import Navigation from './Navigation';
 import Loading from './Loading';
 import Data from './Data';
+import Mint from './Mint';
 
 import NFT_ABI from '../abis/NFT.json';
 import config from '../config.json';
@@ -76,7 +77,19 @@ function App() {
         <>
           <Row>
             <Col>
+            {balance > 0 ? (
+              <div className='text-center'>
+                <img
+                  src={`https:/gateway.pinata.cloud/ipfs/QmQPEMsfd1tJnqYPbnTQCjoa8vczfsV1FmqZWgRdNQ7z3g/${balance.toString()}.png`}
+                  alt='nft'
+                  width='400px'
+                  height='400px'
+                  className='img-fluid'
+                />
+              </div>
+            ) : (
               <img src={preview} alt='preview' className='img-fluid' />
+            )}
             </Col>
 
             <Col>
@@ -89,6 +102,13 @@ function App() {
                 cost={cost} 
                 balance={balance}
               />
+              <Mint
+                provider={provider}
+                nft={nft}
+                cost={cost}
+                setIsLoading={setIsLoading}
+              />
+              
             </Col>
           </Row>
         </>
